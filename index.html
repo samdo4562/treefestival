@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 제주 식물 박람회 | 산지천 초록정원</title>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --bg: #07140d;
+      --lime: #b9f777;
+      --mint: #7fffd4;
+      --leaf: #1f8f56;
+      --cream: #fff8df;
+      --brown: #583a22;
+      --glass: rgba(255,255,255,.08);
+      --glass-border: rgba(255,255,255,.18);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(127,255,212,.16), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(185,247,119,.18), transparent 25%),
+        linear-gradient(180deg, #07140d 0%, #0b1e13 35%, #f7f2df 100%);
+      color: #fff;
+      overflow-x: hidden;
+      word-break: keep-all;
+      overflow-wrap: normal;
+      line-break: strict;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    p, li, a, button, span, strong, b, small, label {
+      word-break: keep-all;
+      overflow-wrap: normal;
+      line-break: strict;
+    }
+
+    .text-balance-ko {
+      word-break: keep-all;
+      overflow-wrap: normal;
+      line-break: strict;
+    }
+
+    .noise::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      opacity: .055;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.65'/%3E%3C/svg%3E");
+    }
+
+    #three-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: .85;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .glass {
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.045));
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 70px rgba(0,0,0,.24);
+      backdrop-filter: blur(20px);
+    }
+
+    .glass-light {
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(255,255,255,.75);
+      box-shadow: 0 18px 55px rgba(16,55,29,.12);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-title {
+      font-size: clamp(3.5rem, 10vw, 9.5rem);
+      line-height: .88;
+      letter-spacing: -0.08em;
+      font-weight: 950;
+    }
+
+    .text-gradient {
+      background: linear-gradient(90deg, #fff8df, #b9f777 38%, #7fffd4 68%, #ffffff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .neon {
+      box-shadow:
+        0 0 24px rgba(185,247,119,.22),
+        inset 0 0 28px rgba(127,255,212,.08);
+    }
+
+    .leaf-card {
+      transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+    }
+    .leaf-card:hover {
+      transform: translateY(-9px) scale(1.015);
+      border-color: rgba(185,247,119,.55);
+      box-shadow: 0 30px 70px rgba(7, 35, 18, .22);
+    }
+
+    .orb {
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(185,247,119,.4), transparent 62%);
+      filter: blur(2px);
+      animation: float 7s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-28px) rotate(8deg); }
+    }
+
+    .ticker {
+      white-space: nowrap;
+      animation: ticker 28s linear infinite;
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .pulse-dot {
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: .85; }
+      50% { transform: scale(1.5); opacity: .25; }
+      100% { transform: scale(1); opacity: .85; }
+    }
+
+    .ai-panel {
+      background:
+        linear-gradient(135deg, rgba(10, 35, 20, .92), rgba(14, 85, 48, .86)),
+        radial-gradient(circle at 0% 0%, rgba(185,247,119,.22), transparent 30%);
+    }
+
+    .typing::after {
+      content: "|";
+      animation: blink .8s infinite;
+      color: var(--lime);
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .plant-svg {
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 30px 40px rgba(0,0,0,.25));
+    }
+
+    .hero-forest-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 18%, rgba(216,255,153,.18), transparent 22%),
+        radial-gradient(circle at 20% 30%, rgba(127,255,212,.08), transparent 20%),
+        radial-gradient(circle at 80% 26%, rgba(185,247,119,.09), transparent 18%);
+      pointer-events: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #b9f777, #7fffd4);
+      color: #062013;
+      box-shadow: 0 15px 40px rgba(127,255,212,.28);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 55px rgba(127,255,212,.38);
+    }
+
+    .section-light {
+      color: #173522;
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(31,143,86,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31,143,86,.08) 1px, transparent 1px);
+      background-size: 26px 26px;
+    }
+
+    .section-schedule {
+      position: relative;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(185,247,119,.18), transparent 20%),
+        radial-gradient(circle at 85% 15%, rgba(127,255,212,.13), transparent 22%),
+        linear-gradient(180deg, #eef6ea 0%, #f5f7ef 100%);
+    }
+
+    .section-schedule::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(31,143,86,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31,143,86,.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      opacity: .55;
+    }
+
+    .section-location {
+      position: relative;
+      background:
+        radial-gradient(circle at 82% 18%, rgba(185,247,119,.12), transparent 18%),
+        radial-gradient(circle at 18% 78%, rgba(127,255,212,.08), transparent 20%),
+        linear-gradient(180deg, #f7f2df 0%, #f3eed9 100%);
+    }
+
+    .section-location::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(31,143,86,.18), transparent);
+    }
+
+    .photo-frame {
+      position: relative;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      background: linear-gradient(135deg, #102918, #07140d);
+      transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
+      border: 1px solid rgba(185,247,119,.18);
+    }
+
+    .photo-frame:hover {
+      transform: translateY(-8px) scale(1.02) !important;
+      box-shadow: 0 28px 80px rgba(127,255,212,.16);
+      border-color: rgba(185,247,119,.5);
+    }
+
+    .photo-illustration {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: .98;
+      transition: transform .5s ease, opacity .5s ease;
+    }
+
+    .photo-frame:hover .photo-illustration {
+      transform: scale(1.08);
+      opacity: .7;
+    }
+
+    .photo-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.08) 42%, rgba(0,0,0,.68) 100%),
+        radial-gradient(circle at 20% 20%, rgba(185,247,119,.22), transparent 35%);
+      z-index: 2;
+    }
+
+    .photo-content {
+      position: relative;
+      z-index: 3;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .photo-tip {
+      opacity: 0;
+      transform: translateY(12px);
+      max-height: 0;
+      overflow: hidden;
+      transition: all .35s ease;
+    }
+
+    .photo-frame:hover .photo-tip {
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 90px;
+    }
+
+    .photo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      width: fit-content;
+      border-radius: 999px;
+      padding: .42rem .72rem;
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(10px);
+      color: #ecffd7;
+      font-size: .76rem;
+      font-weight: 900;
+    }
+
+    .blink-cta {
+      animation: blinkCta 1.1s infinite;
+    }
+    @keyframes blinkCta {
+      0%,100% { filter: brightness(1); transform: scale(1); }
+      50% { filter: brightness(1.35); transform: scale(1.018); }
+    }
+
+
+    #festivalMap {
+      width: 100%;
+      height: 520px;
+      border-radius: 2rem;
+      overflow: hidden;
+      background: #102918;
+      z-index: 1;
+    }
+
+    .leaflet-container {
+      font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 18px;
+      background: rgba(7, 20, 13, .94);
+      color: #fff;
+      border: 1px solid rgba(185,247,119,.28);
+      box-shadow: 0 18px 50px rgba(0,0,0,.35);
+      backdrop-filter: blur(14px);
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(7, 20, 13, .94);
+    }
+
+    .map-marker {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #b9f777, #7fffd4);
+      border: 3px solid rgba(255,255,255,.92);
+      box-shadow: 0 0 0 8px rgba(185,247,119,.22), 0 10px 24px rgba(0,0,0,.35);
+    }
+
+    .map-marker-main {
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fff8df, #b9f777 45%, #7fffd4);
+      border: 4px solid rgba(255,255,255,.96);
+      box-shadow: 0 0 0 12px rgba(185,247,119,.25), 0 18px 34px rgba(0,0,0,.45);
+      animation: mapPulse 1.6s infinite;
+    }
+
+    @keyframes mapPulse {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(185,247,119,.22), 0 18px 34px rgba(0,0,0,.45); }
+      50% { box-shadow: 0 0 0 18px rgba(185,247,119,.06), 0 18px 34px rgba(0,0,0,.45); }
+    }
+
+
+    /* Mobile optimization */
+    @media (max-width: 768px) {
+      body {
+        word-break: keep-all;
+        overflow-wrap: normal;
+      }
+
+      nav {
+        width: calc(100% - 1rem) !important;
+        top: .5rem !important;
+        border-radius: 1.25rem !important;
+        padding: .75rem !important;
+      }
+
+      nav .hidden.md\:flex {
+        display: none !important;
+      }
+
+      nav .leading-tight p:first-child {
+        font-size: .76rem !important;
+      }
+
+      nav .leading-tight p:last-child {
+        font-size: .66rem !important;
+      }
+
+      nav a.btn-primary,
+      nav > a {
+        padding: .55rem .85rem !important;
+        font-size: .75rem !important;
+        white-space: nowrap;
+      }
+
+      .hero-title {
+        font-size: clamp(3.1rem, 18vw, 5.4rem) !important;
+        line-height: .92 !important;
+        letter-spacing: -0.07em !important;
+      }
+
+      header {
+        padding-top: 6.5rem !important;
+        min-height: auto !important;
+      }
+
+      header .grid {
+        gap: 2rem !important;
+      }
+
+      header p.text-xl,
+      header p.md\:text-2xl {
+        font-size: 1.05rem !important;
+        line-height: 1.65 !important;
+      }
+
+      .glass,
+      .glass-light {
+        border-radius: 1.5rem !important;
+      }
+
+      .rounded-\[3rem\],
+      .rounded-\[2\.5rem\],
+      .rounded-\[2\.2rem\],
+      .rounded-\[2rem\] {
+        border-radius: 1.5rem !important;
+      }
+
+      .plant-svg {
+        height: 245px !important;
+        max-height: 245px !important;
+        margin-top: .5rem !important;
+      }
+
+      .min-h-\[520px\] {
+        min-height: 360px !important;
+      }
+
+      header .rounded-\[2\.2rem\] {
+        padding: 1rem !important;
+      }
+
+      header .absolute.bottom-6.left-6.right-6 {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        margin-top: .75rem !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: .6rem !important;
+      }
+
+      header .absolute.bottom-6.left-6.right-6 .glass {
+        padding: .85rem !important;
+        border-radius: 1rem !important;
+      }
+
+      header .absolute.bottom-6.left-6.right-6 p.text-2xl {
+        font-size: 1.05rem !important;
+        line-height: 1.25 !important;
+      }
+
+      header .absolute.bottom-6.left-6.right-6 p.text-xs {
+        font-size: .7rem !important;
+      }
+
+      .content section {
+        padding-top: 4.5rem !important;
+        padding-bottom: 4.5rem !important;
+      }
+
+      h2 {
+        font-size: clamp(2.65rem, 12vw, 4rem) !important;
+        line-height: 1.05 !important;
+        letter-spacing: -0.055em !important;
+      }
+
+      h3 {
+        line-height: 1.15 !important;
+      }
+
+      .persona {
+        padding: .85rem !important;
+        border-radius: 1.05rem !important;
+      }
+
+      .persona b {
+        font-size: .92rem !important;
+      }
+
+      .persona span {
+        font-size: .72rem !important;
+        line-height: 1.35 !important;
+      }
+
+      #aiText {
+        font-size: 1.02rem !important;
+        line-height: 1.7 !important;
+        min-height: 180px !important;
+      }
+
+      #festivalMap {
+        height: 360px !important;
+        border-radius: 1.35rem !important;
+      }
+
+      .leaflet-popup-content {
+        margin: 12px 14px !important;
+        font-size: .86rem !important;
+      }
+
+      .floating-ai {
+        right: .75rem !important;
+        bottom: .75rem !important;
+        padding: .8rem 1rem !important;
+        font-size: .85rem !important;
+      }
+
+      input,
+      select,
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .ticker {
+        font-size: .95rem !important;
+      }
+
+      .photo-frame {
+        transform: none !important;
+      }
+
+      .photo-frame:hover {
+        transform: translateY(-4px) scale(1.01) !important;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .hero-title {
+        font-size: clamp(2.9rem, 20vw, 4.7rem) !important;
+      }
+
+      .plant-svg {
+        height: 220px !important;
+        max-height: 220px !important;
+      }
+
+      .min-h-\[520px\] {
+        min-height: 340px !important;
+      }
+
+      #festivalMap {
+        height: 330px !important;
+      }
+
+      .grid-cols-3 {
+        grid-template-columns: 1fr !important;
+      }
+
+      .grid-cols-2 {
+        grid-template-columns: 1fr !important;
+      }
+
+      .md\:grid-cols-2,
+      .md\:grid-cols-3,
+      .md\:grid-cols-4 {
+        grid-template-columns: 1fr !important;
+      }
+
+      .text-5xl {
+        font-size: 2.6rem !important;
+      }
+
+      .text-4xl {
+        font-size: 2.15rem !important;
+      }
+
+      .text-3xl {
+        font-size: 1.65rem !important;
+      }
+    }
+
+    @media print {
+      #three-bg, .noise::before, nav, .floating-ai { display: none !important; }
+      body { background: #fff; color: #111; }
+      section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+
+<body class="noise">
+  <canvas id="three-bg"></canvas>
+
+  <div class="content">
+    <!-- Navigation -->
+    <nav class="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-7xl glass rounded-full px-5 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full bg-lime-200 flex items-center justify-center text-emerald-950 font-black">植</div>
+        <div class="leading-tight">
+          <p class="font-black text-sm tracking-tight">JEJU PLANT EXPO</p>
+          <p class="text-[11px] text-emerald-100/70">산지천 초록정원</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-6 text-sm text-white/82">
+        <a href="#program" class="hover:text-lime-200">프로그램</a>
+        <a href="#ai" class="hover:text-lime-200">식물 큐레이터</a>
+        <a href="#contest" class="hover:text-lime-200">사진공모전</a>
+        <a href="#schedule" class="hover:text-lime-200">일정</a>
+        <a href="#location" class="hover:text-lime-200">오시는 길</a>
+      </div>
+      <a href="#apply" class="btn-primary rounded-full px-5 py-2 text-sm font-black transition">사전 신청</a>
+    </nav>
+
+    <!-- Hero -->
+    <header class="relative min-h-screen flex items-center pt-28 pb-20 overflow-hidden">
+      <div class="orb top-32 left-8"></div>
+      <div class="orb bottom-16 right-10" style="animation-delay: -2s;"></div>
+
+      <div class="max-w-7xl mx-auto text-balance-ko px-6 w-full grid lg:grid-cols-[1.12fr_.88fr] gap-10 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 mb-7 neon">
+            <span class="relative flex w-3 h-3">
+              <span class="absolute inline-flex h-full w-full rounded-full bg-lime-300 opacity-75 pulse-dot"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-lime-200"></span>
+            </span>
+            <span class="text-sm font-bold text-lime-50">2026. 6. 19. FRI - 6. 21. SUN · 산지천 광장</span>
+          </div>
+
+          <h1 class="hero-title text-gradient">
+            제주<br />식물<br />박람회
+          </h1>
+
+          <p class="mt-8 max-w-2xl text-xl md:text-2xl text-white/82 leading-relaxed font-medium">
+            산지천을 따라 펼쳐지는 <b class="text-lime-200">3일간의 초록 정원</b>.<br />
+            식물 전시존, 플랜트 마켓, 원데이클래스, 식물사진 공모전까지 한 번에 만나는 도심형 녹색문화 박람회.
+          </p>
+
+          <div class="mt-9 flex flex-wrap gap-4">
+            <a href="#apply" class="btn-primary rounded-full px-7 py-4 font-black transition">원데이클래스 신청하기</a>
+            <a href="#contest" class="glass rounded-full px-7 py-4 font-black hover:bg-white/15 transition">사진공모전 참여하기</a>
+          </div>
+
+          <div class="mt-10 grid grid-cols-3 gap-3 max-w-2xl">
+            <div class="glass rounded-3xl p-5">
+              <p class="text-4xl font-black text-lime-200">1,000</p>
+              <p class="text-sm text-white/70 mt-1">예상 방문객</p>
+            </div>
+            <div class="glass rounded-3xl p-5">
+              <p class="text-4xl font-black text-lime-200">3일</p>
+              <p class="text-sm text-white/70 mt-1">전시·체험 운영</p>
+            </div>
+            <div class="glass rounded-3xl p-5">
+              <p class="text-4xl font-black text-lime-200">8+</p>
+              <p class="text-sm text-white/70 mt-1">핵심 프로그램</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="glass rounded-[3rem] p-6 md:p-8 neon">
+            <div class="rounded-[2.2rem] overflow-hidden md:overflow-hidden bg-gradient-to-br from-[#062314] via-[#0b3a21] to-[#153a22] p-8 min-h-[520px] relative">
+              <div class="hero-forest-glow"></div>
+
+              <svg class="absolute inset-0 w-full h-full opacity-95" viewBox="0 0 520 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <radialGradient id="forestGlow" cx="50%" cy="18%" r="55%">
+                    <stop offset="0%" stop-color="#d8ff99" stop-opacity="0.22"/>
+                    <stop offset="55%" stop-color="#7fffd4" stop-opacity="0.08"/>
+                    <stop offset="100%" stop-color="#062314" stop-opacity="0"/>
+                  </radialGradient>
+                  <linearGradient id="mistLayer" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#d8ff99" stop-opacity="0.10"/>
+                    <stop offset="100%" stop-color="#d8ff99" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <rect width="520" height="520" fill="url(#forestGlow)"/>
+                <ellipse cx="260" cy="80" rx="170" ry="90" fill="url(#mistLayer)"/>
+                <g opacity="0.22">
+                  <path d="M0 285 C40 255 80 255 120 285 C160 255 200 255 240 285 C280 250 330 250 380 285 C420 255 460 255 520 285 L520 520 L0 520 Z" fill="#1f5b37"/>
+                  <path d="M0 325 C55 295 100 300 145 325 C185 292 230 292 275 325 C320 290 370 290 420 325 C455 302 490 302 520 325 L520 520 L0 520 Z" fill="#18482d"/>
+                  <path d="M0 370 C60 340 105 345 155 370 C205 338 250 338 300 370 C350 340 405 340 460 370 C490 355 505 355 520 370 L520 520 L0 520 Z" fill="#103720"/>
+                </g>
+                <g opacity="0.22">
+                  <rect x="80" y="120" width="10" height="170" rx="5" fill="#24452e"/>
+                  <ellipse cx="85" cy="105" rx="38" ry="52" fill="#3d7c47"/>
+                  <rect x="410" y="145" width="10" height="155" rx="5" fill="#24452e"/>
+                  <ellipse cx="415" cy="128" rx="34" ry="48" fill="#3a7444"/>
+                  <rect x="145" y="160" width="9" height="130" rx="5" fill="#24452e"/>
+                  <ellipse cx="149" cy="147" rx="28" ry="40" fill="#4b8d54"/>
+                  <rect x="345" y="175" width="9" height="120" rx="5" fill="#24452e"/>
+                  <ellipse cx="349" cy="162" rx="30" ry="42" fill="#4f9a5a"/>
+                </g>
+                <g opacity="0.35">
+                  <circle cx="105" cy="145" r="5" fill="#b9f777"/>
+                  <circle cx="420" cy="185" r="4" fill="#7fffd4"/>
+                  <circle cx="375" cy="112" r="3" fill="#fff8df"/>
+                  <circle cx="135" cy="255" r="4" fill="#7fffd4"/>
+                  <circle cx="392" cy="248" r="5" fill="#b9f777"/>
+                </g>
+              </svg>
+<svg class="plant-svg w-full h-[420px]" viewBox="0 0 520 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="260" cy="452" rx="150" ry="28" fill="rgba(0,0,0,.24)"/>
+                <path d="M246 420C248 330 252 230 260 125" stroke="#B9F777" stroke-width="13" stroke-linecap="round"/>
+                <path d="M263 240C202 190 148 190 112 222C163 242 210 253 263 240Z" fill="#62D982"/>
+                <path d="M255 282C322 223 380 223 425 259C370 287 310 301 255 282Z" fill="#7FFFD4"/>
+                <path d="M254 180C199 126 152 118 111 143C157 178 203 196 254 180Z" fill="#B9F777"/>
+                <path d="M263 150C315 96 370 88 411 118C363 158 316 171 263 150Z" fill="#50C878"/>
+                <path d="M259 122C240 76 254 42 286 22C303 66 298 101 259 122Z" fill="#D8FF99"/>
+                <rect x="164" y="382" width="192" height="90" rx="32" fill="#FFF8DF"/>
+                <path d="M180 382H340L320 472H200L180 382Z" fill="#D98A3D"/>
+                <path d="M188 404H332" stroke="#8A512C" stroke-width="9" stroke-linecap="round"/>
+                <circle cx="118" cy="92" r="10" fill="#B9F777"/>
+                <circle cx="430" cy="188" r="8" fill="#7FFFD4"/>
+                <circle cx="389" cy="70" r="6" fill="#FFF8DF"/>
+                <circle cx="90" cy="314" r="7" fill="#7FFFD4"/>
+              </svg>
+
+              <div class="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-3">
+                <div class="glass rounded-2xl p-4">
+                  <p class="text-xs text-lime-100/75">실시간 혼잡도</p>
+                  <p class="text-2xl font-black text-white">여유</p>
+                </div>
+                <div class="glass rounded-2xl p-4">
+                  <p class="text-xs text-lime-100/75">추천 관람 코스</p>
+                  <p class="text-2xl font-black text-white">전시 → 마켓</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Ticker -->
+    <div class="overflow-hidden bg-lime-200 text-emerald-950 py-4 font-black text-lg">
+      <div class="ticker inline-block">
+        🌿 식물 전시존 · 플랜트 마켓 · 원데이클래스 · 식물사진 공모전 · 식물 처방소 · 어린이 새싹학교 · 산지천 그린투어 · 야간 초록정원 ·
+        🌿 식물 전시존 · 플랜트 마켓 · 원데이클래스 · 식물사진 공모전 · 식물 처방소 · 어린이 새싹학교 · 산지천 그린투어 · 야간 초록정원 ·
+      </div>
+    </div>
+
+    <!-- Concept -->
+    <section class="py-24 px-6">
+      <div class="max-w-7xl mx-auto text-balance-ko grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <p class="text-lime-200 font-black mb-4">EVENT CONCEPT</p>
+          <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em] leading-[1.02]">
+            산지천에<br />
+            피어나는<br />
+            초록의 정원
+          </h2>
+        </div>
+        <div class="glass rounded-[2.5rem] p-8 md:p-10">
+          <p class="text-xl md:text-2xl leading-relaxed text-white/84 font-medium">
+            이번 박람회는 단순한 전시·판매 행사를 넘어,
+            시민이 직접 식물을 심고, 전문가에게 배우고, 사진으로 기록하며,
+            나만의 반려식물을 만나는 <b class="text-lime-200">참여형 식물문화 플랫폼</b>입니다.
+          </p>
+          <div class="mt-8 grid sm:grid-cols-3 gap-4">
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-3xl">👀</p>
+              <p class="font-black mt-2">보고</p>
+              <p class="text-sm text-white/65 mt-1">테마 식물 전시존</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-3xl">🌱</p>
+              <p class="font-black mt-2">심고</p>
+              <p class="text-sm text-white/65 mt-1">원데이클래스</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-3xl">📸</p>
+              <p class="font-black mt-2">기록</p>
+              <p class="text-sm text-white/65 mt-1">사진공모전</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Program -->
+    <section id="program" class="section-light grid-bg py-24 px-6 bg-[#f7f2df]">
+      <div class= text-balance-ko"max-w-7xl mx-auto">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+          <div>
+            <p class="text-emerald-700 font-black mb-3">PROGRAM</p>
+            <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em]">핵심 프로그램</h2>
+          </div>
+          
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">🌿</div>
+            <h3 class="text-2xl font-black">식물 전시존존</h3>
+            <p class="mt-3 text-emerald-950/70">제주 자생식물, 반려식물, 다육·선인장, 희귀식물, 플랜테리어 전시.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">🛒</div>
+            <h3 class="text-2xl font-black">플랜트 마켓</h3>
+            <p class="mt-3 text-emerald-950/70">지역 화훼농가, 플랜트숍, 청년 셀러가 참여하는 식물·원예용품 판매.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">🪴</div>
+            <h3 class="text-2xl font-black">원데이클래스</h3>
+            <p class="mt-3 text-emerald-950/70">미니화분, 테라리움, 허브화분, 다육 분갈이 등 직접 만드는 체험.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">📷</div>
+            <h3 class="text-2xl font-black">식물사진 공모전</h3>
+            <p class="mt-3 text-emerald-950/70">내가 만난 초록의 순간을 주제로 한 시민 참여형 사진공모전.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">🩺</div>
+            <h3 class="text-2xl font-black">식물 처방소</h3>
+            <p class="mt-3 text-emerald-950/70">시든 식물 사진을 가져오면 전문가가 물주기·햇빛·병충해를 상담.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">👧</div>
+            <h3 class="text-2xl font-black">어린이 새싹학교</h3>
+            <p class="mt-3 text-emerald-950/70">씨앗 심기, 식물 관찰, 이름표 만들기 등 가족 체험형 교육.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">🚶</div>
+            <h3 class="text-2xl font-black">산지천 그린투어</h3>
+            <p class="mt-3 text-emerald-950/70">산지천 광장 생태·수변공간을 해설과 함께 걷는 도심 자연 투어.</p>
+          </article>
+
+          <article class="leaf-card glass-light rounded-[2rem] p-7">
+            <div class="text-5xl mb-5">✨</div>
+            <h3 class="text-2xl font-black">야간 초록정원</h3>
+            <p class="mt-3 text-emerald-950/70">조명, 식물, 포토존을 결합한 야간 감성 체류형 콘텐츠.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI Section -->
+    <section id="ai" class="py-24 px-6 bg-[#07140d]">
+      <div class="max-w-7xl mx-auto text-balance-ko grid lg:grid-cols-[.92fr_1.08fr] gap-8 items-stretch">
+        <div class="ai-panel rounded-[2.5rem] p-8 md:p-10 border border-lime-200/20">
+          <h2 class="text-5xl md:text-6xl font-black tracking-[-.06em] leading-[.95]">
+            식물<br />큐레이터
+          </h2>
+          <p class="mt-6 text-lg text-white/78 leading-relaxed text-balance-ko">
+            어떤 식물을 좋아하는지, 누구와 함께 방문하는지에 따라 어울리는 관람 코스를 추천해드립니다.
+            나에게 맞는 유형을 선택하고 산지천 광장의 초록 프로그램을 더 알차게 즐겨보세요.
+          </p>
+
+          <div class="mt-8 grid grid-cols-2 md:grid-cols-3 gap-3">
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="beginner">
+              <b>초보 식집사</b><br><span class="text-sm opacity-75">처음 키우기 좋은 식물</span>
+            </button>
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="family">
+              <b>가족 방문객</b><br><span class="text-sm opacity-75">가족 체험 프로그램</span>
+            </button>
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="collector">
+              <b>희귀식물 관심형</b><br><span class="text-sm opacity-75">희귀식물과 전시 관람</span>
+            </button>
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="photo">
+              <b>사진·감성형</b><br><span class="text-sm opacity-75">사진 찍기 좋은 코스</span>
+            </button>
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="healing">
+              <b>산책·휴식형</b><br><span class="text-sm opacity-75">산책과 휴식 중심</span>
+            </button>
+            <button class="persona rounded-2xl bg-white/10 p-4 text-left hover:bg-lime-200 hover:text-emerald-950 transition" data-type="market">
+              <b>쇼핑 집중형</b><br><span class="text-sm opacity-75">식물 구매와 관리 상담</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="glass rounded-[2.5rem] p-7 md:p-9">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-lime-200 font-black">추천 코스</p>
+              <h3 class="text-3xl md:text-4xl font-black mt-1">나에게 맞는 관람 코스</h3>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-lime-200 text-emerald-950 flex items-center justify-center font-black text-2xl">🌿</div>
+          </div>
+
+          <div class="mt-8 rounded-[2rem] bg-black/24 p-6 border border-white/10">
+            <p id="aiText" class="typing text-xl md:text-2xl leading-relaxed font-bold text-white/92 min-h-[150px]">
+              식물을 처음 키우는 분께는 반려식물 관리법 강좌를 먼저 추천합니다. 이어서 미니화분 만들기 체험을 하고, 플랜트 마켓에서 관리가 쉬운 식물을 살펴보면 좋습니다.
+            </p>
+          </div>
+
+          <div class="mt-6 grid md:grid-cols-3 gap-4">
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-sm text-white/60">추천 체류시간</p>
+              <p id="stayTime" class="text-3xl font-black text-lime-200 mt-1">90분</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-sm text-white/60">어울리는 식물</p>
+              <p id="plantPick" class="text-3xl font-black text-lime-200 mt-1">스투키</p>
+            </div>
+            <div class="rounded-3xl bg-white/10 p-5">
+              <p class="text-sm text-white/60">추천 공간</p>
+              <p id="zonePick" class="text-3xl font-black text-lime-200 mt-1">클래스존</p>
+            </div>
+          </div>
+
+          <div class="mt-7 rounded-[2rem] bg-white/10 border border-white/10 p-6">
+            <p class="text-lime-200 font-black text-lg">유형을 선택해보세요</p>
+            <p class="mt-2 text-white/72 font-medium">관심 있는 유형을 누르면 추천 관람 순서, 머무는 시간, 어울리는 식물이 바로 표시됩니다.</p>
+          </div>
+
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Registration Status -->
+    <section class="section-light py-24 px-6 bg-[#f7f2df]">
+      <div class= text-balance-ko"max-w-7xl mx-auto">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12">
+          <div>
+            <p class="text-emerald-700 font-black mb-3">사전접수 안내</p>
+            <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em] leading-[1.02]">
+              지금 신청 가능한<br />프로그램
+            </h2>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+          <article class="glass-light rounded-[2.5rem] p-8 md:p-10 overflow-hidden relative">
+            <div class="absolute -right-16 -top-16 w-52 h-52 rounded-full bg-emerald-200/30"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-emerald-700 font-black">전체 사전접수 현황</p>
+                  <h3 class="text-3xl md:text-4xl font-black mt-2">현재 684명 접수</h3>
+                </div>
+                <div class="w-16 h-16 rounded-3xl bg-emerald-950 text-lime-100 flex items-center justify-center text-3xl">🌿</div>
+              </div>
+
+              <div class="mt-8">
+                <div class="flex justify-between text-sm font-black text-emerald-950/65 mb-3">
+                  <span>684명 신청</span>
+                  <span>1,000명 정원</span>
+                </div>
+                <div class="h-5 rounded-full bg-emerald-950/10 overflow-hidden">
+                  <div class="h-full rounded-full bg-emerald-700" style="width:68.4%"></div>
+                </div>
+              </div>
+
+              <div class="mt-7 grid grid-cols-2 gap-4">
+                <div class="rounded-3xl bg-white/70 p-5">
+                  <p class="text-sm text-emerald-900/60 font-bold">접수 인원</p>
+                  <p class="text-4xl font-black text-emerald-950 mt-1">684명</p>
+                </div>
+                <div class="rounded-3xl bg-white/70 p-5">
+                  <p class="text-sm text-emerald-900/60 font-bold">남은 정원</p>
+                  <p class="text-4xl font-black text-emerald-950 mt-1">316명</p>
+                </div>
+              </div>
+
+              <p class="mt-6 text-emerald-950/70 font-medium">
+                식물 전시, 플랜트 마켓, 사진공모전 관람을 포함한 전체 박람회 사전접수 현황입니다.
+              </p>
+            </div>
+          </article>
+
+          <article class="glass-light rounded-[2.5rem] p-8 md:p-10 overflow-hidden relative">
+            <div class="absolute -right-16 -top-16 w-52 h-52 rounded-full bg-lime-200/40"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between gap-4">
+                <div>
+                  <p class="text-emerald-700 font-black">원데이클래스 잔여석</p>
+                  <h3 class="text-3xl md:text-4xl font-black mt-2">현재 72석 남음</h3>
+                </div>
+                <div class="w-16 h-16 rounded-3xl bg-lime-200 text-emerald-950 flex items-center justify-center text-3xl">🪴</div>
+              </div>
+
+              <div class="mt-8">
+                <div class="flex justify-between text-sm font-black text-emerald-950/65 mb-3">
+                  <span>168석 신청</span>
+                  <span>240석 정원</span>
+                </div>
+                <div class="h-5 rounded-full bg-emerald-950/10 overflow-hidden">
+                  <div class="h-full rounded-full bg-lime-500" style="width:70%"></div>
+                </div>
+              </div>
+
+              <div class="mt-7 grid grid-cols-2 gap-4">
+                <div class="rounded-3xl bg-white/70 p-5">
+                  <p class="text-sm text-emerald-900/60 font-bold">신청 좌석</p>
+                  <p class="text-4xl font-black text-emerald-950 mt-1">168석</p>
+                </div>
+                <div class="rounded-3xl bg-white/70 p-5">
+                  <p class="text-sm text-emerald-900/60 font-bold">잔여 좌석</p>
+                  <p class="text-4xl font-black text-emerald-950 mt-1">72석</p>
+                </div>
+              </div>
+
+              <p class="mt-6 text-emerald-950/70 font-medium">
+                미니화분 만들기, 테라리움, 허브화분 등 체험 프로그램은 회차별 정원이 있어 조기 마감될 수 있습니다.
+              </p>
+            </div>
+          </article>
+        </div>
+        <div class="mt-8 rounded-[2rem] bg-emerald-950 text-white p-6 md:p-7">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p class="text-lime-200 font-black">접수 안내</p>
+              <p class="mt-2 text-white/75 font-medium">
+                박람회 관람은 누구나 가능하며, 원데이클래스는 좌석이 한정되어 있어 사전접수를 권장합니다.
+              </p>
+            </div>
+            <a href="#apply" class="inline-flex items-center justify-center rounded-full bg-lime-200 text-emerald-950 px-6 py-3 font-black hover:scale-[1.02] transition">
+              사전접수 하러가기
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Contest -->
+    <section id="contest" class="py-24 px-6 bg-[#0b1e13]">
+      <div class= text-balance-ko"max-w-7xl mx-auto">
+        <div class="grid lg:grid-cols-[.86fr_1.14fr] gap-8 items-center">
+          <div>
+            <p class="text-lime-200 font-black mb-3">PHOTO CONTEST</p>
+            <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em] leading-[1.02]">
+              내가 만난<br />초록의 순간
+            </h2>
+            <p class="mt-6 text-xl text-white/78 leading-relaxed">
+              식물, 정원, 반려식물, 제주 자연, 산지천 광장의 초록 풍경을 담은 사진을 공모합니다.
+              현장 전시와 온라인 갤러리, 관람객 투표를 연계할 수 있습니다.
+            </p>
+            <a href="#apply" class="inline-block mt-8 btn-primary rounded-full px-7 py-4 font-black transition">공모전 접수하기</a>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-5">
+            <div class="photo-frame rounded-[2rem] p-5">
+              <svg class="photo-illustration" viewBox="0 0 420 315" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#173d24"/>
+                    <stop offset="100%" stop-color="#07140d"/>
+                  </linearGradient>
+                  <radialGradient id="sun1" cx="55%" cy="30%" r="40%">
+                    <stop offset="0%" stop-color="#d8ff99" stop-opacity=".9"/>
+                    <stop offset="100%" stop-color="#d8ff99" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <rect width="420" height="315" fill="url(#g1)"/>
+                <circle cx="310" cy="70" r="110" fill="url(#sun1)"/>
+                <path d="M190 275 C192 220 198 145 210 70" stroke="#b9f777" stroke-width="10" stroke-linecap="round"/>
+                <path d="M207 146 C150 92 94 98 60 135 C112 156 165 164 207 146Z" fill="#65d982"/>
+                <path d="M213 177 C273 115 334 118 375 158 C318 189 261 198 213 177Z" fill="#7fffd4"/>
+                <path d="M205 100 C177 62 188 28 226 12 C246 51 241 80 205 100Z" fill="#d8ff99"/>
+                <rect x="145" y="240" width="120" height="55" rx="18" fill="#fff8df"/>
+                <path d="M158 240H252L238 295H172L158 240Z" fill="#d98a3d"/>
+              </svg>
+              <div class="photo-overlay"></div>
+              <div class="photo-content">
+                <span class="photo-badge">ENTRY 01 · 출품 예시</span>
+                <div>
+                  <h3 class="text-3xl font-black">반려식물</h3>
+                  <p class="mt-2 text-white/78 font-medium">집에서 키우는 나만의 식물과 일상의 교감</p>
+                  <p class="photo-tip mt-3 text-sm text-lime-100/90 font-bold">촬영 팁: 창가 자연광, 잎의 질감, 화분 주변 소품을 함께 담아보세요.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="photo-frame rounded-[2rem] p-5" style="transform: translateY(24px);">
+              <svg class="photo-illustration" viewBox="0 0 420 315" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="sky2" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#16452c"/>
+                    <stop offset="100%" stop-color="#07140d"/>
+                  </linearGradient>
+                  <radialGradient id="sun2" cx="25%" cy="20%" r="32%">
+                    <stop offset="0%" stop-color="#fff8df" stop-opacity=".9"/>
+                    <stop offset="100%" stop-color="#fff8df" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <rect width="420" height="315" fill="url(#sky2)"/>
+                <circle cx="95" cy="65" r="95" fill="url(#sun2)"/>
+                <path d="M0 245 C70 210 115 220 165 190 C235 148 300 178 420 125 L420 315 L0 315Z" fill="#0d2b19"/>
+                <path d="M0 270 C90 232 160 248 230 210 C300 174 345 205 420 175 L420 315 L0 315Z" fill="#1f8f56"/>
+                <path d="M75 235 C92 180 108 150 118 105 C128 150 144 180 160 235Z" fill="#b9f777"/>
+                <path d="M260 222 C275 170 290 132 310 90 C325 140 344 175 365 222Z" fill="#7fffd4"/>
+              </svg>
+              <div class="photo-overlay"></div>
+              <div class="photo-content">
+                <span class="photo-badge">ENTRY 02 · 출품 예시</span>
+                <div>
+                  <h3 class="text-3xl font-black">제주 자연</h3>
+                  <p class="mt-2 text-white/78 font-medium">제주 숲, 오름, 바람 속에서 만나는 초록 풍경</p>
+                  <p class="photo-tip mt-3 text-sm text-lime-100/90 font-bold">촬영 팁: 하늘·오름·식물을 3단 구도로 잡으면 제주성이 살아납니다.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="photo-frame rounded-[2rem] p-5">
+              <svg class="photo-illustration" viewBox="0 0 420 315" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="river3" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#0e3523"/>
+                    <stop offset="100%" stop-color="#07140d"/>
+                  </linearGradient>
+                  <linearGradient id="water3" x1="0" x2="1">
+                    <stop offset="0%" stop-color="#7fffd4" stop-opacity=".72"/>
+                    <stop offset="100%" stop-color="#b9f777" stop-opacity=".55"/>
+                  </linearGradient>
+                </defs>
+                <rect width="420" height="315" fill="url(#river3)"/>
+                <path d="M0 215 C55 180 105 195 160 170 C230 140 295 150 420 92 L420 315 L0 315Z" fill="#123f25"/>
+                <path d="M0 257 C90 205 154 235 225 190 C290 148 344 160 420 118 L420 315 L0 315Z" fill="#1f8f56"/>
+                <path d="M0 280 C95 248 130 275 205 240 C285 203 330 225 420 180 L420 315 L0 315Z" fill="url(#water3)"/>
+                <path d="M30 250 C55 215 76 195 96 160 C98 205 96 230 82 260Z" fill="#d8ff99"/>
+                <path d="M330 192 C345 150 365 125 387 98 C389 148 382 180 365 205Z" fill="#b9f777"/>
+                <path d="M145 262 C185 245 218 247 260 232" stroke="#fff8df" stroke-width="4" opacity=".38" stroke-linecap="round"/>
+              </svg>
+              <div class="photo-overlay"></div>
+              <div class="photo-content">
+                <span class="photo-badge">ENTRY 03 · 출품 예시</span>
+                <div>
+                  <h3 class="text-3xl font-black">산지천 풍경</h3>
+                  <p class="mt-2 text-white/78 font-medium">행사장 산책길, 수변, 식물 전시존가 어우러진 장면</p>
+                  <p class="photo-tip mt-3 text-sm text-lime-100/90 font-bold">촬영 팁: 물빛 반사와 식물 실루엣을 같이 담으면 현장감이 강해집니다.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="photo-frame rounded-[2rem] p-5" style="transform: translateY(24px);">
+              <svg class="photo-illustration" viewBox="0 0 420 315" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="daily4" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#19391f"/>
+                    <stop offset="100%" stop-color="#07140d"/>
+                  </linearGradient>
+                  <radialGradient id="lamp4" cx="68%" cy="28%" r="38%">
+                    <stop offset="0%" stop-color="#b9f777" stop-opacity=".8"/>
+                    <stop offset="100%" stop-color="#b9f777" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <rect width="420" height="315" fill="url(#daily4)"/>
+                <circle cx="285" cy="82" r="110" fill="url(#lamp4)"/>
+                <rect x="48" y="210" width="324" height="48" rx="22" fill="#fff8df" opacity=".18"/>
+                <rect x="85" y="165" width="88" height="88" rx="22" fill="#fff8df" opacity=".9"/>
+                <path d="M128 220 C130 188 134 152 140 108" stroke="#1f8f56" stroke-width="7" stroke-linecap="round"/>
+                <path d="M140 150 C103 122 74 130 58 158 C91 170 119 170 140 150Z" fill="#b9f777"/>
+                <path d="M143 172 C180 135 214 140 235 168 C198 186 166 190 143 172Z" fill="#7fffd4"/>
+                <rect x="250" y="170" width="75" height="75" rx="20" fill="#d98a3d"/>
+                <path d="M286 218 C288 190 292 165 302 135" stroke="#d8ff99" stroke-width="6" stroke-linecap="round"/>
+                <path d="M300 166 C334 134 360 142 374 166 C344 181 319 182 300 166Z" fill="#65d982"/>
+              </svg>
+              <div class="photo-overlay"></div>
+              <div class="photo-content">
+                <span class="photo-badge">ENTRY 04 · 출품 예시</span>
+                <div>
+                  <h3 class="text-3xl font-black">초록 일상</h3>
+                  <p class="mt-2 text-white/78 font-medium">카페, 책상, 창가, 거리에서 발견한 식물의 순간</p>
+                  <p class="photo-tip mt-3 text-sm text-lime-100/90 font-bold">촬영 팁: 사람의 손, 책, 커피잔 등을 살짝 넣으면 스토리가 생깁니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule -->
+    <section id="schedule" class="section-light section-schedule py-24 px-6">
+      <div class= text-balance-ko"max-w-7xl mx-auto relative z-10">
+        <p class="text-emerald-700 font-black mb-3">PROGRAM SCHEDULE</p>
+        <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em] mb-12 leading-[1.02]">3일간의 초록 일정</h2>
+
+        <div class="grid lg:grid-cols-3 gap-5">
+          <div class="glass-light rounded-[2rem] p-7">
+            <p class="text-emerald-700 font-black">DAY 1 · 6.19 금</p>
+            <h3 class="text-3xl font-black mt-2">개막과 전시</h3>
+            <ul class="mt-6 space-y-4 text-emerald-950/75 font-medium">
+              <li>10:00 개장 및 관람객 입장</li>
+              <li>11:00 개막식</li>
+              <li>13:00 원데이클래스 1회차</li>
+              <li>16:00 제주 식물 이야기 강연</li>
+              <li>18:00 야간 초록정원 운영</li>
+            </ul>
+          </div>
+
+          <div class="glass-light rounded-[2rem] p-7">
+            <p class="text-emerald-700 font-black">DAY 2 · 6.20 토</p>
+            <h3 class="text-3xl font-black mt-2">체험과 참여</h3>
+            <ul class="mt-6 space-y-4 text-emerald-950/75 font-medium">
+              <li>10:00 어린이 새싹학교</li>
+              <li>11:00 테라리움 만들기</li>
+              <li>13:00 산지천 그린투어</li>
+              <li>15:30 다육식물 분갈이</li>
+              <li>17:00 사진공모전 현장투표</li>
+            </ul>
+          </div>
+
+          <div class="glass-light rounded-[2rem] p-7">
+            <p class="text-emerald-700 font-black">DAY 3 · 6.21 일</p>
+            <h3 class="text-3xl font-black mt-2">공모와 마켓</h3>
+            <ul class="mt-6 space-y-4 text-emerald-950/75 font-medium">
+              <li>10:00 허브화분 만들기</li>
+              <li>11:00 식물 입양존 운영</li>
+              <li>13:00 반려식물 키우기 강좌</li>
+              <li>14:30 사진공모전 우수작 발표</li>
+              <li>16:00 폐막 프로그램</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Location Map -->
+    <section id="location" class="section-light section-location py-24 px-6">
+      <div class= text-balance-ko"max-w-7xl mx-auto relative z-10">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
+          <div>
+            <p class="text-emerald-700 font-black mb-3">LOCATION</p>
+            <h2 class="text-5xl md:text-7xl font-black tracking-[-.06em] leading-[1.02]">
+              행사 장소는<br />산지천 광장
+            </h2>
+          </div>
+          <p class="max-w-xl text-lg text-emerald-950/70 font-medium">
+            산지천 광장을 중심으로 산짓물공원과 북수구광장 두 거점을 연결해 운영합니다.
+            방문객은 전시와 포토정원을 즐기고, 이어서 마켓과 체험 프로그램까지 자연스럽게 이동할 수 있습니다.
+          </p>
+        </div>
+
+        <div class="grid lg:grid-cols-[.72fr_1.28fr] gap-6 items-stretch">
+          <div class="space-y-4">
+            <div class="glass-light rounded-[2rem] p-6">
+              <p class="text-sm text-emerald-900/60 font-bold">MAIN VENUE</p>
+              <h3 class="text-3xl font-black mt-2">산짓물공원 · 북수구광장</h3>
+              <p class="mt-3 text-emerald-950/72 font-medium">
+                산짓물공원은 식물 전시존와 포토정원을 중심으로 꾸며지는 감성 관람 공간입니다.
+                북수구광장은 플랜트 마켓과 원데이클래스가 운영되는 참여형 체험 공간으로 구성합니다. 각 거점은 네이버지도로 바로 확인할 수 있습니다.
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="glass-light rounded-[1.6rem] p-5">
+                <p class="text-3xl">🚶</p>
+                <p class="font-black mt-2">식물 전시존</p>
+                <p class="text-sm text-emerald-950/65 mt-1">희귀식물·반려식물 전시</p>
+              </div>
+              <div class="glass-light rounded-[1.6rem] p-5">
+                <p class="text-3xl">🌿</p>
+                <p class="font-black mt-2">포토정원</p>
+                <p class="text-sm text-emerald-950/65 mt-1">산지천 수변 포토존</p>
+              </div>
+              <div class="glass-light rounded-[1.6rem] p-5">
+                <p class="text-3xl">📍</p>
+                <p class="font-black mt-2">플랜트 마켓</p>
+                <p class="text-sm text-emerald-950/65 mt-1">식물·원예용품 판매</p>
+              </div>
+              <div class="glass-light rounded-[1.6rem] p-5">
+                <p class="text-3xl">🗺️</p>
+                <p class="font-black mt-2">원데이클래스</p>
+                <p class="text-sm text-emerald-950/65 mt-1">미니화분·테라리움 체험</p>
+              </div>
+            </div>
+
+            <a href="https://samdo4562.github.io/eats2/" target="_blank" rel="noopener noreferrer"
+               class="block rounded-[2rem] bg-emerald-950 text-white p-6 hover:bg-emerald-900 transition group">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-lime-200 font-black">주변 맛집 안내</p>
+                  <p class="mt-2 text-white/75 font-medium">
+                    박람회를 둘러본 뒤 산지천 광장 주변의 식당과 카페도 함께 즐겨보세요.
+                    행사장 인근 맛집 정보를 별도 페이지에서 확인할 수 있습니다.
+                  </p>
+                </div>
+                <div class="shrink-0 w-12 h-12 rounded-2xl bg-lime-200 text-emerald-950 flex items-center justify-center text-2xl font-black group-hover:scale-110 transition">
+                  ↗
+                </div>
+              </div>
+              <div class="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-black text-lime-100">
+                맛집 지도 보러가기
+                <span class="transition group-hover:translate-x-1">→</span>
+              </div>
+            </a>
+          </div>
+
+          <div class="glass-light rounded-[2.5rem] p-4 md:p-5">
+            <div id="festivalMap"></div>
+            <div class="mt-4 grid md:grid-cols-2 gap-3">
+              <div class="rounded-2xl bg-emerald-950 text-white p-4">
+                <button onclick="focusMap('sanjitmul')" class="w-full text-left font-black hover:opacity-90 transition whitespace-normal">
+                  <span class="block text-xl">식물 전시존 · 포토정원</span>
+                  <span class="block text-xs text-white/65 mt-1">산짓물공원 거점</span>
+                </button>
+                <a href="https://map.naver.com/p/search/%EC%A0%9C%EC%A3%BC%EC%8B%9C%20%EA%B1%B4%EC%9E%85%EB%8F%99%201334" target="_blank" rel="noopener noreferrer"
+                   class="mt-4 inline-flex w-full items-center justify-center rounded-full bg-lime-200 text-emerald-950 px-4 py-3 text-sm font-black hover:scale-[1.02] transition">
+                  네이버지도에서 보기
+                  <span class="ml-1">↗</span>
+                </a>
+              </div>
+
+              <div class="rounded-2xl bg-white border border-emerald-900/10 text-emerald-950 p-4">
+                <button onclick="focusMap('buksugu')" class="w-full text-left font-black hover:opacity-80 transition whitespace-normal">
+                  <span class="block text-xl">플랜트 마켓 · 원데이클래스</span>
+                  <span class="block text-xs text-emerald-950/55 mt-1">북수구광장 거점</span>
+                </button>
+                <a href="https://map.naver.com/p/search/%EC%A0%9C%EC%A3%BC%EC%8B%9C%20%EC%9D%BC%EB%8F%84%EC%9D%BC%EB%8F%99%201231-1" target="_blank" rel="noopener noreferrer"
+                   class="mt-4 inline-flex w-full items-center justify-center rounded-full bg-emerald-950 text-lime-100 px-4 py-3 text-sm font-black hover:scale-[1.02] transition">
+                  네이버지도에서 보기
+                  <span class="ml-1">↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Apply -->
+    <section id="apply" class="py-24 px-6 bg-[#07140d]">
+      <div class= text-balance-ko"max-w-5xl mx-auto text-center">
+        <p class="text-lime-200 font-black mb-3">JOIN US</p>
+        <h2 class="text-5xl md:text-8xl font-black tracking-[-.07em] leading-[1.02]">
+          초록이 필요한 순간,<br />산지천으로 오세요.
+        </h2>
+        <p class="mt-8 text-xl text-white/76 max-w-3xl mx-auto leading-relaxed text-balance-ko">
+          2026. 6. 19.부터 6. 21.까지, 산지천 광장에서 식물 전시존·플랜트 마켓·원데이클래스·사진공모전을 만날 수 있습니다.
+        </p>
+
+        <div class="mt-10 glass rounded-[2.5rem] p-7 md:p-10 text-left">
+          <div class="grid md:grid-cols-3 gap-4">
+            <input class="rounded-2xl px-5 py-4 bg-white/10 border border-white/15 outline-none focus:border-lime-200" placeholder="이름" />
+            <input class="rounded-2xl px-5 py-4 bg-white/10 border border-white/15 outline-none focus:border-lime-200" placeholder="연락처" />
+            <select class="rounded-2xl px-5 py-4 bg-white/10 border border-white/15 outline-none focus:border-lime-200 text-white">
+              <option class="text-black">원데이클래스</option>
+              <option class="text-black">사진공모전</option>
+              <option class="text-black">단체 관람</option>
+              <option class="text-black">판매부스 문의</option>
+            </select>
+          </div>
+          <button onclick="fakeApply()" class="mt-5 w-full btn-primary rounded-2xl px-7 py-5 font-black text-lg transition">사전신청 완료하기</button>
+          <p id="applyMsg" class="mt-4 text-lime-200 font-bold hidden">신청이 접수된 것처럼 보이는 데모입니다. 실제 운영 시 구글폼·DB·카카오 알림톡과 연결하면 됩니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-[#041009] px-6 py-10 text-white/60">
+      <div class="max-w-7xl mx-auto text-balance-ko flex flex-col md:flex-row justify-between gap-4">
+        <p class="font-bold">2026 제주 식물 박람회 · 산지천 광장</p>
+        <p>식물 전시존 · 플랜트 마켓 · 원데이클래스 · 식물사진 공모전</p>
+      </div>
+    </footer>
+
+    <!-- Floating Curator -->
+    <button onclick="scrollToAi()" class="floating-ai fixed right-5 bottom-5 z-40 glass rounded-full px-5 py-4 font-black text-lime-100 hover:bg-white/15 transition">
+      ✨ 추천 코스 보기
+    </button>
+  </div>
+
+  <script>
+    // Three.js floating leaf particles
+    const canvas = document.getElementById("three-bg");
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    camera.position.z = 70;
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, 0);
+    leafShape.bezierCurveTo(6, 8, 12, 8, 18, 0);
+    leafShape.bezierCurveTo(11, -5, 6, -8, 0, 0);
+    const leafGeometry = new THREE.ShapeGeometry(leafShape);
+
+    const materials = [
+      new THREE.MeshBasicMaterial({ color: 0xb9f777, transparent: true, opacity: 0.42, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: 0x7fffd4, transparent: true, opacity: 0.34, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: 0x50c878, transparent: true, opacity: 0.38, side: THREE.DoubleSide })
+    ];
+
+    const leaves = [];
+    for (let i = 0; i < 90; i++) {
+      const leaf = new THREE.Mesh(leafGeometry, materials[i % materials.length]);
+      leaf.position.set((Math.random() - .5) * 160, (Math.random() - .5) * 120, (Math.random() - .5) * 60);
+      const s = Math.random() * .28 + .08;
+      leaf.scale.set(s, s, s);
+      leaf.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      leaf.userData = {
+        speed: Math.random() * .03 + .01,
+        rot: Math.random() * .018 + .004,
+        drift: Math.random() * .018 + .006
+      };
+      group.add(leaf);
+      leaves.push(leaf);
+    }
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener("mousemove", (e) => {
+      mouseX = (e.clientX / window.innerWidth - .5) * 2;
+      mouseY = (e.clientY / window.innerHeight - .5) * 2;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      group.rotation.y += (mouseX * .18 - group.rotation.y) * .03;
+      group.rotation.x += (-mouseY * .08 - group.rotation.x) * .03;
+
+      leaves.forEach((leaf) => {
+        leaf.position.y -= leaf.userData.speed;
+        leaf.position.x += Math.sin(Date.now() * .001 + leaf.position.y) * leaf.userData.drift;
+        leaf.rotation.z += leaf.userData.rot;
+        leaf.rotation.x += leaf.userData.rot * .35;
+        if (leaf.position.y < -70) {
+          leaf.position.y = 70;
+          leaf.position.x = (Math.random() - .5) * 160;
+        }
+      });
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      if (typeof festivalMap !== "undefined" && festivalMap) {
+        setTimeout(() => festivalMap.invalidateSize(), 150);
+      }
+    });
+
+    // GSAP entrance
+    gsap.from(".hero-title", { y: 80, opacity: 0, duration: 1.1, ease: "power4.out" });
+    gsap.from("nav", { y: -40, opacity: 0, duration: .8, delay: .2, ease: "power3.out" });
+    gsap.from(".glass", { y: 24, opacity: 0, duration: .9, delay: .35, stagger: .05, ease: "power3.out" });
+
+        // 식물 큐레이터
+    const recommendations = {
+      beginner: {
+        text: "식물을 처음 키우는 분께는 반려식물 관리법 강좌를 먼저 추천합니다. 이어서 미니화분 만들기 체험을 하고, 플랜트 마켓에서 관리가 쉬운 식물을 살펴보면 좋습니다.",
+        stay: "90분",
+        plant: "스투키",
+        zone: "원데이클래스존"
+      },
+      family: {
+        text: "아이와 함께 방문한다면 씨앗 심기와 미니화분 만들기 체험을 추천합니다. 포토정원에서 사진을 남기고, 허브화분 체험까지 이어가면 가족 나들이 코스로 좋습니다.",
+        stay: "120분",
+        plant: "바질",
+        zone: "가족 체험존"
+      },
+      collector: {
+        text: "희귀식물에 관심이 있다면 식물 전시존을 먼저 둘러보세요. 전시 관람 후 플랜트 마켓에서 마음에 드는 식물을 살펴보고, 관리 방법까지 상담받을 수 있습니다.",
+        stay: "150분",
+        plant: "무늬 몬스테라",
+        zone: "식물 전시존"
+      },
+      photo: {
+        text: "사진을 남기고 싶다면 포토정원과 산지천 수변 동선을 추천합니다. 마음에 드는 장면을 촬영한 뒤 식물사진 공모전에도 참여해보세요.",
+        stay: "100분",
+        plant: "수국",
+        zone: "포토정원"
+      },
+      healing: {
+        text: "조용히 쉬어가고 싶다면 산짓물공원에서 전시를 천천히 둘러본 뒤 산지천 수변길을 걸어보세요. 초록 풍경을 보며 가볍게 머물기 좋은 코스입니다.",
+        stay: "80분",
+        plant: "로즈마리",
+        zone: "산책 동선"
+      },
+      market: {
+        text: "식물을 구매하고 싶다면 플랜트 마켓을 먼저 둘러보세요. 원예용품 부스와 식물 관리 상담을 함께 이용하면 집에 어울리는 식물을 고르기 쉽습니다.",
+        stay: "110분",
+        plant: "몬스테라",
+        zone: "플랜트 마켓존"
+      }
+    };
+
+    const aiText = document.getElementById("aiText");
+    const stayTime = document.getElementById("stayTime");
+    const plantPick = document.getElementById("plantPick");
+    const zonePick = document.getElementById("zonePick");
+
+    let curatorTypingTimer = null;
+
+    function typeText(text) {
+      if (curatorTypingTimer) {
+        clearInterval(curatorTypingTimer);
+        curatorTypingTimer = null;
+      }
+
+      aiText.textContent = "";
+      let i = 0;
+
+      curatorTypingTimer = setInterval(() => {
+        aiText.textContent += text.charAt(i);
+        i++;
+
+        if (i >= text.length) {
+          clearInterval(curatorTypingTimer);
+          curatorTypingTimer = null;
+        }
+      }, 18);
+    }
+
+    document.querySelectorAll(".persona").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const data = recommendations[btn.dataset.type];
+        if (!data) return;
+
+        document.querySelectorAll(".persona").forEach(item => {
+          item.classList.remove("bg-lime-200", "text-emerald-950");
+          item.classList.add("bg-white/10");
+        });
+        btn.classList.remove("bg-white/10");
+        btn.classList.add("bg-lime-200", "text-emerald-950");
+
+        typeText(data.text);
+        stayTime.textContent = data.stay;
+        plantPick.textContent = data.plant;
+        zonePick.textContent = data.zone;
+      });
+    });
+
+    function fakeApply() {
+      document.getElementById("applyMsg").classList.remove("hidden");
+    }
+
+    function scrollToAi() {
+      document.getElementById("ai").scrollIntoView({ behavior: "smooth" });
+    }
+
+
+    // 원데이클래스 map - clean reset version
+    // Leaflet map - corrected two venue markers
+    // 주소 검색 로직 제거. 사용자가 확인한 지도 화면 기준으로 산짓물공원·북수구광장 위치를 직접 지정합니다.
+    const mapPoints = {
+      sanjitmul: {
+        venue: "산짓물공원",
+        program: "식물 전시존 · 포토정원",
+        lat: 33.51560647,
+        lng: 126.5285597,
+        zoom: 18,
+        desc: "제주 자생식물, 반려식물, 희귀식물 전시존와 산지천 수변 포토존 운영"
+      },
+      buksugu: {
+        venue: "북수구광장",
+        program: "플랜트 마켓 · 원데이클래스",
+        lat: 33.51460,
+        lng: 126.52798,
+        zoom: 18,
+        desc: "식물 판매부스, 원예용품 마켓, 미니화분·테라리움 체험 운영"
+      }
+    };
+
+    let festivalMap;
+    let venueMarkers = {};
+
+    function createVenueIcon(isMain = false) {
+      return L.divIcon({
+        className: "",
+        html: isMain ? '<div class="map-marker-main"></div>' : '<div class="map-marker"></div>',
+        iconSize: isMain ? [30, 30] : [22, 22],
+        iconAnchor: isMain ? [15, 15] : [11, 11]
+      });
+    }
+
+    function popupHtml(point) {
+      return `
+        <div style="min-width:230px">
+          <div style="font-size:18px;color:#b9f777;font-weight:900;line-height:1.25">${point.program}</div>
+          <div style="display:inline-block;margin-top:8px;padding:4px 9px;border-radius:999px;background:rgba(185,247,119,.12);color:rgba(255,255,255,.82);font-size:12px;font-weight:800">${point.venue}</div>
+          <div style="display:block;margin-top:10px;line-height:1.5;color:rgba(255,255,255,.86)">${point.desc}</div>
+        </div>
+      `;
+    }
+
+    function initFestivalMap() {
+      const mapEl = document.getElementById("festivalMap");
+      if (!mapEl || typeof L === "undefined") return;
+
+      if (festivalMap) {
+        festivalMap.remove();
+        festivalMap = null;
+      }
+      if (mapEl._leaflet_id) {
+        mapEl._leaflet_id = null;
+      }
+
+      const centerLat = (mapPoints.sanjitmul.lat + mapPoints.buksugu.lat) / 2;
+      const centerLng = (mapPoints.sanjitmul.lng + mapPoints.buksugu.lng) / 2;
+
+      festivalMap = L.map("festivalMap", {
+        scrollWheelZoom: false,
+        zoomControl: false,
+        attributionControl: true
+      }).setView([centerLat, centerLng], 17);
+
+      L.control.zoom({ position: "bottomright" }).addTo(festivalMap);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 20,
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(festivalMap);
+
+      venueMarkers.sanjitmul = L.marker(
+        [mapPoints.sanjitmul.lat, mapPoints.sanjitmul.lng],
+        { icon: createVenueIcon(true) }
+      )
+        .addTo(festivalMap)
+        .bindPopup(popupHtml(mapPoints.sanjitmul));
+
+      venueMarkers.buksugu = L.marker(
+        [mapPoints.buksugu.lat, mapPoints.buksugu.lng],
+        { icon: createVenueIcon(false) }
+      )
+        .addTo(festivalMap)
+        .bindPopup(popupHtml(mapPoints.buksugu));
+
+      const routeLine = [
+        [mapPoints.buksugu.lat, mapPoints.buksugu.lng],
+        [mapPoints.sanjitmul.lat, mapPoints.sanjitmul.lng]
+      ];
+
+      L.polyline(routeLine, {
+        color: "#1f8f56",
+        weight: 5,
+        opacity: .72,
+        dashArray: "10 10"
+      }).addTo(festivalMap);
+
+      festivalMap.fitBounds(routeLine, {
+        padding: [80, 80],
+        maxZoom: 17
+      });
+
+      setTimeout(() => {
+        festivalMap.invalidateSize();
+        venueMarkers.buksugu.openPopup();
+      }, 350);
+    }
+
+    function focusMap(type) {
+      if (!festivalMap || !mapPoints[type]) return;
+      const p = mapPoints[type];
+      festivalMap.flyTo([p.lat, p.lng], p.zoom || 18, { duration: .9 });
+
+      if (venueMarkers[type]) {
+        setTimeout(() => venueMarkers[type].openPopup(), 650);
+      }
+    }
+
+    window.addEventListener("load", initFestivalMap);
+
+  </script>
+</body>
+</html>
